@@ -87,27 +87,17 @@
     }
 
     function resetSighting() {
-        // Clear inputs
         document.getElementById('spiderInput').value = "";
         document.getElementById('locationInput').value = "";
-
-        // Reset button state
         const btn = document.getElementById('submitBtn');
         const input = document.getElementById('spiderInput');
         const locInput = document.getElementById('locationInput');
-
         btn.disabled = true;
-        btn.classList.remove('bg-green-600'); // Clean up if you added success colors
         document.getElementById('btnText').innerText = "Transmit Data";
-
         input.disabled = false;
         locInput.disabled = false;
-
-        // Hide previous results
         document.getElementById('resultArea').classList.add('hidden');
         document.getElementById('errorDisplay').classList.add('hidden');
-
-        // Scroll back to top
         window.scrollTo({ top: 0, behavior: 'smooth' });
     }
 
@@ -147,12 +137,17 @@
                     </div>
                     <div class="px-4 space-y-2">${renderStats(sp)}</div>
                     <div class="flex overflow-x-auto space-x-3 no-scrollbar pb-2">
-                        ${sp.sightings.map(s => `
+                        ${sp.sightings.map(s => {
+                const date = new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+                return `
                             <div class="flex-none w-48 group">
                                 <img src="${s.image_url}" class="h-64 w-full object-cover rounded-2xl border border-slate-800">
-                                <p class="text-[8px] text-slate-500 mt-2 uppercase font-black tracking-widest px-1">${s.location_name || 'Austin, TX'}</p>
+                                <div class="flex justify-between items-start mt-2 px-1">
+                                    <p class="text-[8px] text-slate-500 uppercase font-black tracking-widest">${s.location_name || 'Austin, TX'}</p>
+                                    <p class="text-[8px] text-sky-600 uppercase font-black tracking-widest">${date}</p>
+                                </div>
                             </div>
-                        `).join('')}
+                        `}).join('')}
                     </div>
                 </div>`).join('');
         } catch (err) {
@@ -206,8 +201,6 @@
 
             btnText.innerText = "Entry Archived";
             btnSpinner.classList.add('hidden');
-
-            // Auto-scroll to result
             document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth' });
 
         } catch (err) {
@@ -216,7 +209,6 @@
             locInput.disabled = false;
             btnText.innerText = "Retry Transmission";
             btnSpinner.classList.add('hidden');
-
             errorDisplay.innerText = err.message;
             errorDisplay.classList.remove('hidden');
         }
