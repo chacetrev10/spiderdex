@@ -27,7 +27,7 @@
             <div id="errorDisplay" class="hidden bg-red-900/30 border border-red-500/50 p-3 rounded-xl text-red-200 text-xs font-bold mb-2"></div>
 
             <input type="file" id="spiderInput" accept="image/*" capture="environment" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-sky-600 file:text-white">
-            <input type="text" id="locationInput" placeholder="Austin, TX" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+            <label for="locationInput">Location</label><input type="text" id="locationInput" placeholder="Austin, TX" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
 
             <button disabled onclick="submitSighting()" id="submitBtn" class="flex items-center justify-center gap-3 w-full bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs transition-all">
                 <span id="btnText">Transmit Data</span>
