@@ -17,17 +17,24 @@
     <header class="text-center py-8">
         <h1 class="text-5xl font-black tracking-tighter text-white italic">SPIDERDEX</h1>
         <div class="flex justify-center space-x-6 mt-6">
-            <button onclick="showView('capture')" id="nav-capture" class="text-[10px] font-black uppercase tracking-widest border-b-2 border-sky-500 pb-1 text-white">Capture</button>
-            <button onclick="showView('gallery')" id="nav-gallery" class="text-[10px] font-black uppercase tracking-widest border-b-2 border-transparent pb-1 text-slate-500">Archives</button>
+            <button onclick="showView('capture')" id="nav-capture" class="text-[10px] font-black uppercase tracking-widest border-b-2 border-sky-500 pb-1 text-white transition-all">Capture</button>
+            <button onclick="showView('gallery')" id="nav-gallery" class="text-[10px] font-black uppercase tracking-widest border-b-2 border-transparent pb-1 text-slate-500 transition-all">Archives</button>
         </div>
     </header>
 
     <div id="view-capture" class="space-y-6">
-        <main class="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl shadow-2xl space-y-5 backdrop-blur-md relative">
+        <main id="captureForm" class="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl shadow-2xl space-y-5 backdrop-blur-md relative">
             <div id="errorDisplay" class="hidden bg-red-900/30 border border-red-500/50 p-3 rounded-xl text-red-200 text-xs font-bold mb-2"></div>
 
-            <input type="file" id="spiderInput" accept="image/*" capture="environment" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-sky-600 file:text-white">
-            <label for="locationInput">Location</label><input type="text" id="locationInput" placeholder="Austin, TX" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
+            <div class="space-y-1">
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Visual Discovery</label>
+                <input type="file" id="spiderInput" accept="image/*" capture="environment" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-sky-600 file:text-white cursor-pointer">
+            </div>
+
+            <div class="space-y-1">
+                <label for="locationInput" class="block text-[10px] font-black text-slate-500 uppercase tracking-widest ml-1">Sighting Coordinates</label>
+                <input type="text" id="locationInput" placeholder="Austin, TX" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none focus:border-sky-500 transition-colors">
+            </div>
 
             <button disabled onclick="submitSighting()" id="submitBtn" class="flex items-center justify-center gap-3 w-full bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs transition-all">
                 <span id="btnText">Transmit Data</span>
@@ -48,6 +55,10 @@
                 </div>
             </div>
             <img id="resultImage" class="w-full rounded-3xl border border-slate-800">
+
+            <button onclick="resetSighting()" class="w-full bg-slate-800 hover:bg-slate-700 text-slate-300 font-black py-4 rounded-xl uppercase tracking-widest text-[10px] transition-all border border-slate-700">
+                Begin New Investigation
+            </button>
         </div>
     </div>
 
@@ -75,6 +86,31 @@
         if (view === 'gallery') fetchGallery();
     }
 
+    function resetSighting() {
+        // Clear inputs
+        document.getElementById('spiderInput').value = "";
+        document.getElementById('locationInput').value = "";
+
+        // Reset button state
+        const btn = document.getElementById('submitBtn');
+        const input = document.getElementById('spiderInput');
+        const locInput = document.getElementById('locationInput');
+
+        btn.disabled = true;
+        btn.classList.remove('bg-green-600'); // Clean up if you added success colors
+        document.getElementById('btnText').innerText = "Transmit Data";
+
+        input.disabled = false;
+        locInput.disabled = false;
+
+        // Hide previous results
+        document.getElementById('resultArea').classList.add('hidden');
+        document.getElementById('errorDisplay').classList.add('hidden');
+
+        // Scroll back to top
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
     function renderStats(sp) {
         const cats = [
             { l: 'Coolness', r: sp.coolness_tier, rs: sp.coolness_reason },
@@ -99,7 +135,7 @@
             const list = await res.json();
 
             if (list.length === 0) {
-                container.innerHTML = `<p class="text-center text-slate-500 text-sm">The archives are currently empty.</p>`;
+                container.innerHTML = `<p class="text-center text-slate-500 text-sm italic">The archives are currently empty.</p>`;
                 return;
             }
 
@@ -111,7 +147,12 @@
                     </div>
                     <div class="px-4 space-y-2">${renderStats(sp)}</div>
                     <div class="flex overflow-x-auto space-x-3 no-scrollbar pb-2">
-                        ${sp.sightings.map(s => `<img src="${s.image_url}" class="h-64 w-48 object-cover rounded-2xl border border-slate-800 flex-none">`).join('')}
+                        ${sp.sightings.map(s => `
+                            <div class="flex-none w-48 group">
+                                <img src="${s.image_url}" class="h-64 w-full object-cover rounded-2xl border border-slate-800">
+                                <p class="text-[8px] text-slate-500 mt-2 uppercase font-black tracking-widest px-1">${s.location_name || 'Austin, TX'}</p>
+                            </div>
+                        `).join('')}
                     </div>
                 </div>`).join('');
         } catch (err) {
@@ -125,20 +166,21 @@
         const btnSpinner = document.getElementById('btnSpinner');
         const errorDisplay = document.getElementById('errorDisplay');
         const input = document.getElementById('spiderInput');
+        const locInput = document.getElementById('locationInput');
         const file = input.files[0];
 
         if (!file) return;
 
-        // Reset state
         errorDisplay.classList.add('hidden');
         btn.disabled = true;
         input.disabled = true;
+        locInput.disabled = true;
         btnText.innerText = "Transmitting...";
         btnSpinner.classList.remove('hidden');
 
         const fd = new FormData();
         fd.append('image', file);
-        fd.append('location', document.getElementById('locationInput').value);
+        fd.append('location', locInput.value || "Austin, TX");
 
         try {
             const res = await fetch(`${SUPABASE_URL}/functions/v1/log-sighting`, {
@@ -165,9 +207,13 @@
             btnText.innerText = "Entry Archived";
             btnSpinner.classList.add('hidden');
 
+            // Auto-scroll to result
+            document.getElementById('resultArea').scrollIntoView({ behavior: 'smooth' });
+
         } catch (err) {
             btn.disabled = false;
             input.disabled = false;
+            locInput.disabled = false;
             btnText.innerText = "Retry Transmission";
             btnSpinner.classList.add('hidden');
 
