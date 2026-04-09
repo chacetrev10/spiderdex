@@ -8,120 +8,149 @@
     <style>
         .spider-gradient { background: linear-gradient(135deg, #0f172a 0%, #020617 100%); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
     </style>
 </head>
-<body class="spider-gradient min-h-screen text-slate-200 p-4 font-sans">
+<body class="spider-gradient min-h-screen text-slate-200 p-4 font-sans selection:bg-sky-500/30">
+
 <div class="max-w-md mx-auto space-y-6 pb-20">
     <header class="text-center py-8">
         <h1 class="text-5xl font-black tracking-tighter text-white italic">SPIDERDEX</h1>
-        <div class="flex justify-center space-x-4 mt-4">
-            <button onclick="showView('capture')" id="nav-capture" class="text-[10px] font-black uppercase tracking-widest border-b-2 border-sky-500 pb-1 text-white">Capture</button>
-            <button onclick="showView('gallery')" id="nav-gallery" class="text-[10px] font-black uppercase tracking-widest border-b-2 border-transparent pb-1 text-slate-500">Archives</button>
+        <div class="flex justify-center space-x-6 mt-6">
+            <button onclick="showView('capture')" id="nav-capture" class="text-[10px] font-black uppercase tracking-widest border-b-2 border-sky-500 pb-1 text-white transition-all">Capture</button>
+            <button onclick="showView('gallery')" id="nav-gallery" class="text-[10px] font-black uppercase tracking-widest border-b-2 border-transparent pb-1 text-slate-500 transition-all">Archives</button>
         </div>
     </header>
 
     <div id="view-capture" class="space-y-6">
         <main class="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl shadow-2xl space-y-5 backdrop-blur-md">
-            <input type="file" id="spiderInput" accept="image/*" capture="environment" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-sky-600 file:text-white hover:file:bg-sky-500 cursor-pointer">
-            <input type="text" id="locationInput" placeholder="Location (Austin, TX)" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:ring-1 focus:ring-sky-500 outline-none">
-            <button onclick="submitSighting()" id="submitBtn" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs transition-all shadow-lg shadow-sky-900/40">Transmit Data</button>
+            <div>
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Visual Discovery</label>
+                <input type="file" id="spiderInput" accept="image/*" capture="environment"
+                       class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-sky-600 file:text-white hover:file:bg-sky-500 cursor-pointer">
+            </div>
+
+            <div>
+                <label class="block text-[10px] font-black text-slate-500 uppercase tracking-widest mb-2">Location Data</label>
+                <input type="text" id="locationInput" placeholder="Current Location (Austin, TX)"
+                       class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white focus:ring-1 focus:ring-sky-500 outline-none transition-all">
+            </div>
+
+            <button onclick="submitSighting()" id="submitBtn"
+                    class="w-full bg-sky-600 hover:bg-sky-500 text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs transition-all shadow-lg shadow-sky-900/40 active:scale-[0.98]">
+                Transmit Data
+            </button>
         </main>
 
         <div id="resultArea" class="hidden space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700">
             <div class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
                 <div class="bg-sky-600/10 p-6 border-b border-slate-800">
-                    <p class="text-[10px] font-black text-sky-500 uppercase tracking-[0.3em] mb-1">Entry Verified</p>
+                    <p class="text-[10px] font-black text-sky-500 uppercase tracking-[0.3em] mb-1">Official Field Report</p>
                     <h3 id="spiderTitle" class="text-white font-black uppercase tracking-tighter text-2xl"></h3>
                     <p id="sciName" class="text-slate-500 italic text-sm"></p>
                 </div>
-                <div id="statsContainer" class="p-6 space-y-4 text-xs"></div>
-                <div class="p-6 bg-slate-950 border-t border-slate-800">
-                    <p id="verdictText" class="text-white font-bold text-sm italic border-l-2 border-sky-600 pl-3"></p>
+
+                <div id="statsContainer" class="p-6 space-y-4">
+                </div>
+
+                <div class="p-6 bg-slate-950 border-t border-slate-800 space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-[10px] font-black text-slate-500 uppercase tracking-widest">Weighted Overall</span>
+                        <span id="overallRank" class="text-3xl font-black text-sky-500 italic leading-none"></span>
+                    </div>
+                    <p id="verdictText" class="text-white font-bold text-sm italic border-l-2 border-sky-600 pl-3 py-1"></p>
                 </div>
             </div>
             <img id="resultImage" class="w-full rounded-3xl border border-slate-800 shadow-2xl">
         </div>
     </div>
 
-    <div id="view-gallery" class="hidden space-y-8">
+    <div id="view-gallery" class="hidden space-y-8 animate-in fade-in duration-500">
         <div id="galleryContainer" class="space-y-12">
-            <p class="text-center text-slate-500 text-xs animate-pulse">Initializing Archive Access...</p>
+            <div class="flex flex-col items-center justify-center py-20 space-y-4">
+                <div class="h-8 w-8 border-2 border-sky-500 border-t-transparent rounded-full animate-spin"></div>
+                <p class="text-slate-500 text-[10px] font-black uppercase tracking-widest">Accessing Archive Database...</p>
+            </div>
         </div>
     </div>
 </div>
 
 <script>
+    // Injected by GitHub Actions
     const SUPABASE_URL = '%%SUPABASE_URL%%';
     const ANON_KEY = '%%SUPABASE_ANON_KEY%%';
 
-    // --- View Switching ---
+    // --- View Controller ---
     function showView(view) {
-        document.getElementById('view-capture').classList.toggle('hidden', view !== 'capture');
-        document.getElementById('view-gallery').classList.toggle('hidden', view !== 'gallery');
+        const isCapture = view === 'capture';
+        document.getElementById('view-capture').classList.toggle('hidden', !isCapture);
+        document.getElementById('view-gallery').classList.toggle('hidden', isCapture);
 
-        document.getElementById('nav-capture').className = view === 'capture' ? 'text-[10px] font-black uppercase tracking-widest border-b-2 border-sky-500 pb-1 text-white' : 'text-[10px] font-black uppercase tracking-widest border-b-2 border-transparent pb-1 text-slate-500';
-        document.getElementById('nav-gallery').className = view === 'gallery' ? 'text-[10px] font-black uppercase tracking-widest border-b-2 border-sky-500 pb-1 text-white' : 'text-[10px] font-black uppercase tracking-widest border-b-2 border-transparent pb-1 text-slate-500';
+        // Nav Styling
+        document.getElementById('nav-capture').className = isCapture
+            ? 'text-[10px] font-black uppercase tracking-widest border-b-2 border-sky-500 pb-1 text-white transition-all'
+            : 'text-[10px] font-black uppercase tracking-widest border-b-2 border-transparent pb-1 text-slate-500 transition-all';
+
+        document.getElementById('nav-gallery').className = !isCapture
+            ? 'text-[10px] font-black uppercase tracking-widest border-b-2 border-sky-500 pb-1 text-white transition-all'
+            : 'text-[10px] font-black uppercase tracking-widest border-b-2 border-transparent pb-1 text-slate-500 transition-all';
 
         if (view === 'gallery') fetchGallery();
     }
 
-    // --- Fetch Gallery (The Core Update) ---
+    // --- Archive Fetcher ---
     async function fetchGallery() {
         const container = document.getElementById('galleryContainer');
         try {
-            const response = await fetch(`${SUPABASE_URL}/rest/v1/species?select=*,sightings(*)&order=created_at.desc`, {
-                headers: {
-                    'Authorization': `Bearer ${ANON_KEY}`,
-                    'apikey': ANON_KEY, // This is often the missing piece
-                    'Content-Type': 'application/json'
-                }
+            const response = await fetch(`${SUPABASE_URL}/functions/v1/get-gallery`, {
+                headers: { 'Authorization': `Bearer ${ANON_KEY}` }
             });
+            const speciesList = await response.json();
 
-            const data = await response.json();
-
-            // Safety check: if data is an object with a message, it's a PostgREST error
-            if (!Array.isArray(data)) {
-                throw new Error(data.message || "Database returned an unexpected response.");
-            }
-
-            if (data.length === 0) {
-                container.innerHTML = `<p class="text-center text-slate-500 text-xs mt-10">No records found in database.</p>`;
+            if (speciesList.error) throw new Error(speciesList.error);
+            if (speciesList.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-500 text-xs mt-10 uppercase tracking-widest font-bold">No records in database</p>`;
                 return;
             }
 
-            container.innerHTML = speciesList.map(sp => {
-                const stats = sp.stats;
-                return `
-                        <div class="space-y-4">
-                            <div class="border-l-2 border-sky-900 pl-4">
-                                <h4 class="text-white font-black text-xl tracking-tighter uppercase">${sp.common_name}</h4>
-                                <p class="text-sky-500 text-[10px] font-black italic uppercase">${sp.scientific_name} • RANK ${sp.overall_tier}</p>
-                            </div>
-
-                            <div class="flex overflow-x-auto space-x-3 no-scrollbar pb-2">
-                                ${sp.sightings.map(s => `
-                                    <div class="flex-none w-48 group">
-                                        <img src="${s.image_url}" class="h-64 w-full object-cover rounded-2xl border border-slate-800 group-hover:border-sky-500 transition-colors">
-                                        <p class="text-[8px] text-slate-500 mt-2 uppercase font-bold">${s.location_name || 'Unknown'}</p>
-                                    </div>
-                                `).join('')}
-                            </div>
+            container.innerHTML = speciesList.map(sp => `
+                    <div class="space-y-4">
+                        <div class="border-l-2 border-sky-900 pl-4">
+                            <h4 class="text-white font-black text-xl tracking-tighter uppercase">${sp.common_name}</h4>
+                            <p class="text-sky-500 text-[10px] font-black italic uppercase">${sp.scientific_name} • RANK ${sp.overall_tier}</p>
                         </div>
-                    `;
-            }).join('');
+
+                        <div class="flex overflow-x-auto space-x-3 no-scrollbar pb-2">
+                            ${sp.sightings.map(s => `
+                                <div class="flex-none w-48 group">
+                                    <div class="relative overflow-hidden rounded-2xl border border-slate-800 group-hover:border-sky-500 transition-all shadow-lg">
+                                        <img src="${s.image_url}" class="h-64 w-full object-cover">
+                                        <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-slate-950 to-transparent p-3">
+                                            <p class="text-[8px] text-white font-black uppercase tracking-wider truncate">${s.location_name || 'Austin, TX'}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            `).join('')}
+                        </div>
+                    </div>
+                `).join('');
 
         } catch (err) {
-            container.innerHTML = `<p class="text-red-500 text-xs">Access Denied: ${err.message}</p>`;
+            container.innerHTML = `<div class="p-10 text-center border border-red-900/50 rounded-3xl bg-red-900/10"><p class="text-red-500 text-[10px] font-black uppercase tracking-widest">Connection Failed</p><p class="text-slate-500 text-xs mt-2 font-mono">${err.message}</p></div>`;
         }
     }
 
-    // --- Submission Logic (Existing, with slight tweak to trigger gallery refresh) ---
+    // --- Field Entry Submission ---
     async function submitSighting() {
         const btn = document.getElementById('submitBtn');
-        const file = document.getElementById('spiderInput').files[0];
+        const fileInput = document.getElementById('spiderInput');
+        const file = fileInput.files[0];
+
         if (!file) return alert("System Error: No visual data detected.");
 
-        btn.disabled = true; btn.innerText = "TRANSMITTING...";
+        btn.disabled = true;
+        btn.innerText = "TRANSMITTING DATA...";
+        btn.classList.add('opacity-50', 'animate-pulse');
 
         const formData = new FormData();
         formData.append('image', file);
@@ -142,22 +171,32 @@
                 document.getElementById('overallRank').innerText = s.overall;
                 document.getElementById('verdictText').innerText = s.verdict;
 
-                const categories = [['Coolness', s.coolness], ['Danger', s.danger], ['Rarity', s.rarity], ['Beauty', s.beauty]];
-                document.getElementById('statsContainer').innerHTML = categories.map(([label, cat]) => `
+                const categories = [
+                    { label: 'Coolness', data: s.coolness },
+                    { label: 'Danger', data: s.danger },
+                    { label: 'Rarity', data: s.rarity },
+                    { label: 'Beauty', data: s.beauty }
+                ];
+
+                document.getElementById('statsContainer').innerHTML = categories.map(cat => `
                         <div class="flex items-baseline space-x-2">
-                            <span class="text-white font-black uppercase w-16">${label}:</span>
-                            <span class="text-sky-500 font-black italic">${cat.rank} —</span>
-                            <span class="text-slate-400 leading-tight">${cat.reason}</span>
+                            <span class="text-white font-black text-[10px] uppercase tracking-wider w-16 flex-shrink-0">${cat.label}:</span>
+                            <span class="text-sky-500 font-black italic text-sm">${cat.data.rank} —</span>
+                            <span class="text-slate-400 text-xs leading-tight">${cat.data.reason}</span>
                         </div>
                     `).join('');
 
                 document.getElementById('resultImage').src = data.imageUrl;
                 document.getElementById('resultArea').classList.remove('hidden');
-                btn.innerText = "ENTRY ARCHIVED";
+                btn.innerText = "TRANSMISSION COMPLETE";
+            } else {
+                throw new Error(data.error);
             }
         } catch (err) {
-            btn.disabled = false; btn.innerText = "RETRY";
-            alert(err.message);
+            btn.disabled = false;
+            btn.innerText = "RETRY TRANSMISSION";
+            btn.classList.remove('opacity-50', 'animate-pulse');
+            alert("Upload Failed: " + err.message);
         }
     }
 </script>
