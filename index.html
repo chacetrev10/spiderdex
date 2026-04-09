@@ -69,13 +69,22 @@
     async function fetchGallery() {
         const container = document.getElementById('galleryContainer');
         try {
-            // Fetch species and join all sightings for each
             const response = await fetch(`${SUPABASE_URL}/rest/v1/species?select=*,sightings(*)&order=created_at.desc`, {
-                headers: { 'Authorization': `Bearer ${ANON_KEY}`, 'apikey': ANON_KEY }
+                headers: {
+                    'Authorization': `Bearer ${ANON_KEY}`,
+                    'apikey': ANON_KEY, // This is often the missing piece
+                    'Content-Type': 'application/json'
+                }
             });
-            const speciesList = await response.json();
 
-            if (speciesList.length === 0) {
+            const data = await response.json();
+
+            // Safety check: if data is an object with a message, it's a PostgREST error
+            if (!Array.isArray(data)) {
+                throw new Error(data.message || "Database returned an unexpected response.");
+            }
+
+            if (data.length === 0) {
                 container.innerHTML = `<p class="text-center text-slate-500 text-xs mt-10">No records found in database.</p>`;
                 return;
             }
