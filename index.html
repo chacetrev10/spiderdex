@@ -8,6 +8,8 @@
     <style>
         .spider-gradient { background: linear-gradient(135deg, #0f172a 0%, #020617 100%); }
         .no-scrollbar::-webkit-scrollbar { display: none; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spinner { display: inline-block; width: 1.25rem; height: 1.25rem; border: 3px solid rgba(255,255,255,0.3); border-radius: 50%; border-top-color: #fff; animation: spin 1s ease-in-out infinite; }
     </style>
 </head>
 <body class="spider-gradient min-h-screen text-slate-200 p-4 font-sans">
@@ -21,13 +23,19 @@
     </header>
 
     <div id="view-capture" class="space-y-6">
-        <main class="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl shadow-2xl space-y-5 backdrop-blur-md">
+        <main class="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl shadow-2xl space-y-5 backdrop-blur-md relative">
+            <div id="errorDisplay" class="hidden bg-red-900/30 border border-red-500/50 p-3 rounded-xl text-red-200 text-xs font-bold mb-2"></div>
+
             <input type="file" id="spiderInput" accept="image/*" capture="environment" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-sky-600 file:text-white">
             <input type="text" id="locationInput" placeholder="Austin, TX" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-            <button disabled onclick="submitSighting()" id="submitBtn" class="w-full bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs transition-all">Transmit Data</button>
+
+            <button disabled onclick="submitSighting()" id="submitBtn" class="flex items-center justify-center gap-3 w-full bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs transition-all">
+                <span id="btnText">Transmit Data</span>
+                <div id="btnSpinner" class="hidden spinner"></div>
+            </button>
         </main>
 
-        <div id="resultArea" class="hidden space-y-6">
+        <div id="resultArea" class="hidden space-y-6 animate-in fade-in duration-700">
             <div class="bg-slate-900 border border-slate-800 rounded-3xl overflow-hidden shadow-2xl">
                 <div class="bg-sky-600/10 p-6 border-b border-slate-800">
                     <h3 id="spiderTitle" class="text-white font-black uppercase text-2xl tracking-tighter"></h3>
@@ -52,10 +60,10 @@
     const SUPABASE_URL = '%%SUPABASE_URL%%';
     const ANON_KEY = '%%SUPABASE_ANON_KEY%%';
 
-    // Listen for file selection to enable/disable button
     document.getElementById('spiderInput').addEventListener('change', function(e) {
         const btn = document.getElementById('submitBtn');
         btn.disabled = !e.target.files.length;
+        document.getElementById('errorDisplay').classList.add('hidden');
     });
 
     function showView(view) {
@@ -75,43 +83,58 @@
             { l: 'Beauty', r: sp.beauty_tier, rs: sp.beauty_reason }
         ];
         return cats.map(c => `
-                <div class="flex items-baseline space-x-2">
-                    <span class="text-white font-black text-[10px] uppercase w-16 flex-shrink-0">${c.l}:</span>
-                    <span class="text-sky-500 font-black italic text-sm">${c.r} —</span>
-                    <span class="text-slate-400 text-xs leading-tight">${c.rs}</span>
-                </div>`).join('');
+            <div class="flex items-baseline space-x-2">
+                <span class="text-white font-black text-[10px] uppercase w-16 flex-shrink-0">${c.l}:</span>
+                <span class="text-sky-500 font-black italic text-sm">${c.r} —</span>
+                <span class="text-slate-400 text-xs leading-tight">${c.rs}</span>
+            </div>`).join('');
     }
 
     async function fetchGallery() {
         const container = document.getElementById('galleryContainer');
+        container.innerHTML = `<div class="flex justify-center py-10"><div class="spinner"></div></div>`;
         try {
             const res = await fetch(`${SUPABASE_URL}/functions/v1/get-gallery`, { headers: { 'Authorization': `Bearer ${ANON_KEY}` } });
+            if (!res.ok) throw new Error("Could not retrieve archive data.");
             const list = await res.json();
+
+            if (list.length === 0) {
+                container.innerHTML = `<p class="text-center text-slate-500 text-sm">The archives are currently empty.</p>`;
+                return;
+            }
+
             container.innerHTML = list.map(sp => `
-                    <div class="space-y-4">
-                        <div class="border-l-2 border-sky-900 pl-4">
-                            <h4 class="text-white font-black text-xl uppercase tracking-tighter">${sp.common_name}</h4>
-                            <p class="text-sky-500 text-[10px] font-black italic uppercase">${sp.scientific_name} • RANK ${sp.overall_tier}</p>
-                        </div>
-                        <div class="px-4 space-y-2">${renderStats(sp)}</div>
-                        <div class="flex overflow-x-auto space-x-3 no-scrollbar pb-2">
-                            ${sp.sightings.map(s => `<img src="${s.image_url}" class="h-64 w-48 object-cover rounded-2xl border border-slate-800 flex-none">`).join('')}
-                        </div>
-                    </div>`).join('');
-        } catch (err) { container.innerHTML = `<p class="text-red-500">${err.message}</p>`; }
+                <div class="space-y-4">
+                    <div class="border-l-2 border-sky-900 pl-4">
+                        <h4 class="text-white font-black text-xl uppercase tracking-tighter">${sp.common_name}</h4>
+                        <p class="text-sky-500 text-[10px] font-black italic uppercase">${sp.scientific_name} • RANK ${sp.overall_tier}</p>
+                    </div>
+                    <div class="px-4 space-y-2">${renderStats(sp)}</div>
+                    <div class="flex overflow-x-auto space-x-3 no-scrollbar pb-2">
+                        ${sp.sightings.map(s => `<img src="${s.image_url}" class="h-64 w-48 object-cover rounded-2xl border border-slate-800 flex-none">`).join('')}
+                    </div>
+                </div>`).join('');
+        } catch (err) {
+            container.innerHTML = `<p class="text-red-500 text-center font-bold">Error: ${err.message}</p>`;
+        }
     }
 
     async function submitSighting() {
         const btn = document.getElementById('submitBtn');
+        const btnText = document.getElementById('btnText');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const errorDisplay = document.getElementById('errorDisplay');
         const input = document.getElementById('spiderInput');
         const file = input.files[0];
 
         if (!file) return;
 
-        // Disable button and input during flight
+        // Reset state
+        errorDisplay.classList.add('hidden');
         btn.disabled = true;
         input.disabled = true;
-        btn.innerText = "TRANSMITTING...";
+        btnText.innerText = "Transmitting...";
+        btnSpinner.classList.remove('hidden');
 
         const fd = new FormData();
         fd.append('image', file);
@@ -123,24 +146,33 @@
                 headers: { 'Authorization': `Bearer ${ANON_KEY}` },
                 body: fd
             });
+
             const data = await res.json();
-            if (data.success) {
-                const s = data.stats;
-                document.getElementById('spiderTitle').innerText = s.common_name;
-                document.getElementById('sciName').innerText = s.scientific_name;
-                document.getElementById('overallRank').innerText = s.overall_tier;
-                document.getElementById('verdictText').innerText = s.verdict;
-                document.getElementById('statsContainer').innerHTML = renderStats(s);
-                document.getElementById('resultImage').src = data.imageUrl;
-                document.getElementById('resultArea').classList.remove('hidden');
-                btn.innerText = "ENTRY ARCHIVED";
-                // Keep button disabled after success to prevent double-post
+
+            if (!res.ok || !data.success) {
+                throw new Error(data.error || "Uplink failed. Species identification interrupted.");
             }
+
+            const s = data.stats;
+            document.getElementById('spiderTitle').innerText = s.common_name;
+            document.getElementById('sciName').innerText = s.scientific_name;
+            document.getElementById('overallRank').innerText = s.overall_tier;
+            document.getElementById('verdictText').innerText = s.verdict;
+            document.getElementById('statsContainer').innerHTML = renderStats(s);
+            document.getElementById('resultImage').src = data.imageUrl;
+            document.getElementById('resultArea').classList.remove('hidden');
+
+            btnText.innerText = "Entry Archived";
+            btnSpinner.classList.add('hidden');
+
         } catch (err) {
             btn.disabled = false;
             input.disabled = false;
-            btn.innerText = "RETRY";
-            alert(err.message);
+            btnText.innerText = "Retry Transmission";
+            btnSpinner.classList.add('hidden');
+
+            errorDisplay.innerText = err.message;
+            errorDisplay.classList.remove('hidden');
         }
     }
 </script>
