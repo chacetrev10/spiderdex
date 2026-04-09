@@ -24,7 +24,7 @@
         <main class="bg-slate-900/80 border border-slate-800 p-6 rounded-3xl shadow-2xl space-y-5 backdrop-blur-md">
             <input type="file" id="spiderInput" accept="image/*" capture="environment" class="w-full text-xs text-slate-400 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-[10px] file:font-black file:bg-sky-600 file:text-white">
             <input type="text" id="locationInput" placeholder="Austin, TX" class="w-full bg-slate-950 border border-slate-800 rounded-xl p-3 text-sm text-white outline-none">
-            <button onclick="submitSighting()" id="submitBtn" class="w-full bg-sky-600 hover:bg-sky-500 text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs transition-all">Transmit Data</button>
+            <button disabled onclick="submitSighting()" id="submitBtn" class="w-full bg-sky-600 hover:bg-sky-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:cursor-not-allowed text-white font-black py-4 rounded-xl uppercase tracking-widest text-xs transition-all">Transmit Data</button>
         </main>
 
         <div id="resultArea" class="hidden space-y-6">
@@ -51,6 +51,12 @@
 <script>
     const SUPABASE_URL = '%%SUPABASE_URL%%';
     const ANON_KEY = '%%SUPABASE_ANON_KEY%%';
+
+    // Listen for file selection to enable/disable button
+    document.getElementById('spiderInput').addEventListener('change', function(e) {
+        const btn = document.getElementById('submitBtn');
+        btn.disabled = !e.target.files.length;
+    });
 
     function showView(view) {
         const isCap = view === 'capture';
@@ -97,10 +103,16 @@
 
     async function submitSighting() {
         const btn = document.getElementById('submitBtn');
-        const file = document.getElementById('spiderInput').files[0];
+        const input = document.getElementById('spiderInput');
+        const file = input.files[0];
+
         if (!file) return;
 
-        btn.disabled = true; btn.innerText = "TRANSMITTING...";
+        // Disable button and input during flight
+        btn.disabled = true;
+        input.disabled = true;
+        btn.innerText = "TRANSMITTING...";
+
         const fd = new FormData();
         fd.append('image', file);
         fd.append('location', document.getElementById('locationInput').value || "Austin, TX");
@@ -122,8 +134,14 @@
                 document.getElementById('resultImage').src = data.imageUrl;
                 document.getElementById('resultArea').classList.remove('hidden');
                 btn.innerText = "ENTRY ARCHIVED";
+                // Keep button disabled after success to prevent double-post
             }
-        } catch (err) { btn.disabled = false; btn.innerText = "RETRY"; alert(err.message); }
+        } catch (err) {
+            btn.disabled = false;
+            input.disabled = false;
+            btn.innerText = "RETRY";
+            alert(err.message);
+        }
     }
 </script>
 </body>
