@@ -116,6 +116,30 @@
             </div>`).join('');
     }
 
+    // --- DELETE LOGIC ---
+    async function deleteSighting(id) {
+        const password = prompt("ENTER ADMINISTRATIVE OVERRIDE CODE:");
+        if (!password) return;
+
+        try {
+            const res = await fetch(`${SUPABASE_URL}/functions/v1/delete-sighting`, {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${ANON_KEY}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ sightingId: id, password: password })
+            });
+
+            const data = await res.json();
+            if (!res.ok) throw new Error(data.error || "Purge failed.");
+
+            fetchGallery(); // Refresh archive
+        } catch (err) {
+            alert(err.message);
+        }
+    }
+
     // --- COMPRESSION LOGIC ---
     async function compressImage(file, maxWidth = 1024, quality = 0.85) {
         return new Promise((resolve) => {
@@ -171,7 +195,10 @@
                         ${sp.sightings.map(s => {
                 const date = new Date(s.created_at).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
                 return `
-                            <div class="flex-none w-48 group">
+                            <div class="flex-none w-48 group relative">
+                                <button onclick="deleteSighting('${s.id}')" class="absolute top-2 right-2 bg-red-600/80 hover:bg-red-600 p-2 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 shadow-lg">
+                                    <svg class="w-3 h-3 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M6 18L18 6M6 6l12 12"></path></svg>
+                                </button>
                                 <img src="${s.image_url}" class="h-64 w-full object-cover rounded-2xl border border-slate-800">
                                 <div class="flex justify-between items-start mt-2 px-1">
                                     <p class="text-[8px] text-slate-500 uppercase font-black tracking-widest">${s.location_name || 'Austin, TX'}</p>
@@ -204,7 +231,6 @@
         btnSpinner.classList.remove('hidden');
 
         try {
-            // Client-side compression
             const compressedBlob = await compressImage(file);
 
             btnText.innerText = "Transmitting Data...";
